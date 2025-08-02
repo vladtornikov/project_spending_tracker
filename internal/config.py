@@ -27,6 +27,7 @@ class DatabaseConfig(BaseSettings):
 class LoggerConfig(BaseSettings):
 	level: str
 	format: str
+	date_format: str
 
 
 class ServerConfig(BaseSettings):
