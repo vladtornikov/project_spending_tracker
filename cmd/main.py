@@ -10,10 +10,16 @@ from typing import Callable
 import uvicorn
 from fastapi import FastAPI, Request, Response
 
+from typing import Annotated
+
+from fastapi import Depends, FastAPI
+from fastapi.security import OAuth2PasswordBearer
+
 sys.path.append(str(Path(__file__).parents[1]))
 
 from internal.config import settings
 from internal.logger import configure_logging
+from internal.controllers_API.auth_API import router as auth_router
 
 logger = logging.getLogger(__name__)
 configure_logging()
@@ -33,6 +39,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(auth_router)
 
 
 @app.middleware("http")
@@ -60,6 +67,14 @@ async def add_process_time_to_request(
 def root():
 	return "Hello!"
 
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+@app.get("/items/")
+async def read_items(token: Annotated[str, Depends(oauth2_scheme)]):
+	return {"token": token}
 
 if __name__ == "__main__":
 	uvicorn.run(

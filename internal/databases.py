@@ -11,7 +11,7 @@ engine = create_async_engine(
 	pool_size=settings.env.pool_size,
 	max_overflow=settings.env.max_overflow,
 )
-async_session_maker = async_sessionmaker(bind=engine, expire_in_commit=False)
+async_session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 
 async def get_db_session() -> AsyncSession:
@@ -22,5 +22,5 @@ async def get_db_session() -> AsyncSession:
 DB_Dep = Annotated[AsyncSession, Depends(get_db_session)]
 
 
-class BaseORM(DeclarativeBase):
+class BaseModel(DeclarativeBase):
 	pass
