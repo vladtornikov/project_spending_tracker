@@ -31,7 +31,7 @@ class DatabaseConfig(BaseModel):
 class ServerConfig(BaseModel):
 	host: str
 	port: int
-	reload: bool = Field(default=True)
+	reload: bool = Field(default=False)
 
 
 class LoggerConfig(BaseModel):
