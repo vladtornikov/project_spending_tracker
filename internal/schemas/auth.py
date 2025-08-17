@@ -1,36 +1,55 @@
-import re
-from datetime import datetime, date
+from datetime import date
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr, field_validator
+from pydantic_core import PydanticCustomError
 
 
 class OptionalColumns(BaseModel):
-    fullname: Optional[str] = None
-    birthday: Optional[str] = None
+	fullname: Optional[str] = None
+	birthday: Optional[date] = None
 
-    @field_validator('birth_date', check_fields=False)
-    @classmethod
-    def check_data(cls, value: Optional[str]) -> Optional[str]:
-        if value is None:
-            return value
-        if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
-            raise ValueError('Date must be in a format year-month-day, e.g. 2000-01-31')
-        try:
-            data_value = datetime.fromisoformat(value)
-        except ValueError:
-            raise ValueError('Your date is wrong')
-        if data_value > datetime.today():
-            raise ValueError('Date must be less or equal to today')
-        return value
+	@field_validator("birthday", mode="before")
+	@classmethod
+	def check_data(cls, value: Optional[str | date]) -> Optional[date]:
+		if value is None or isinstance(value, date):
+			return value
+		else:
+			try:
+				data_value = date.fromisoformat(value)
+			except ValueError:
+				raise PydanticCustomError(
+					"birthday_invalid_format",
+					"Неверная дата. Проверьте саму дату или ее формат: YYYY-MM-DD, например: 2000-01-31",
+				)
+			if data_value > date.today():
+				raise PydanticCustomError(
+					"birthday_in_future", "Дата рождения не может быть в будущем"
+				)
+			return data_value
+
 
 class UserRequestRegisterSchema(OptionalColumns):
-    email: EmailStr
-    password: str
+	email: EmailStr
+	password: str
+
 
 class UserAddSchema(OptionalColumns):
-    email: EmailStr
-    hashed_password: str
+	email: EmailStr
+	hashed_password: str
 
-class UserResponseSchema(OptionalColumns):
-    email: EmailStr
+
+class SignupResponse(OptionalColumns):
+	id: int
+	email: EmailStr
+
+
+class AuthenticateUser(BaseModel):
+	email: EmailStr
+	password: str
+
+
+class UserResponseSchemaWithHashedPassword(BaseModel):
+	id: int
+	email: EmailStr
+	hashed_password: str

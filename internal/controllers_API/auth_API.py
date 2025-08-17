@@ -1,33 +1,66 @@
-from typing import Annotated
+from fastapi import APIRouter, Body, Form, Response
+from pydantic import EmailStr
 
-from fastapi import APIRouter, Depends
-from sqlalchemy import insert
+from internal.dependencies import DB_Dep
+from internal.exceptions import (
+	EmailNotFoundException,
+	EmailNotFoundHTTPException,
+	IncorrectPasswordException,
+	IncorrectPasswordHTTPException,
+	UserAlreadyExistsException,
+	UserEmailAlreadyExistsHTTPException,
+)
+from internal.logger import logger_dep
+from internal.schemas.auth import (
+	AuthenticateUser,
+	SignupResponse,
+	UserRequestRegisterSchema,
+)
+from internal.services.auth_service import AuthService
 
-from internal.databases import DB_Dep
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from internal.schemas.auth import UserRequestRegisterSchema, UserAddSchema, UserResponseSchema
-from passlib.context import CryptContext
-from internal.models_database.users import UsersModel
+router = APIRouter(prefix="/api/v1", tags=["Authorization and authentication"])
 
 
-router = APIRouter(prefix='/api/v1', tags=['Authorization and authentication'])
+@router.post("/signup", summary="Create a new user", response_model=dict)
+async def create_new_user(
+	db: DB_Dep,
+	logger: logger_dep,
+	user_data: UserRequestRegisterSchema = Body(
+		examples=[
+			{
+				"email": "example_email@example.com",
+				"password": "example_password",
+				"birthday": "2000-01-31",
+				"fullname": "Vlad Tornikov",
+			}
+		]
+	),
+) -> dict:  # noqa: B008
+	try:
+		user: SignupResponse = await AuthService(db, logger).create_new_user(user_data)
+	except UserAlreadyExistsException:
+		raise UserEmailAlreadyExistsHTTPException
+	logger.info("User signed up, user_id: %s, user_email: %s", user.id, user.email)
+	return {"status": "ok", "data": user}
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+@router.post("/signin", summary="Authenticate user", response_model=dict)
+async def authenticate_user(
+	response: Response,
+	db: DB_Dep,
+	logger: logger_dep,
+	user_email: EmailStr = Form(),
+	password: str = Form(),
+) -> dict:
+	try:
+		access_token: str = await AuthService(db, logger).auth_user(
+			AuthenticateUser(email=user_email, password=password)
+		)
+	except EmailNotFoundException as ex:
+		raise EmailNotFoundHTTPException from ex
+	except IncorrectPasswordException as ex:
+		raise IncorrectPasswordHTTPException from ex
 
-
-@router.post('/signup', summary='Create a new user')
-async def create_new_user(db: DB_Dep, user_data: UserRequestRegisterSchema):
-    hashed_password = get_password_hash(user_data.password)
-    schema_to_add = UserAddSchema(**user_data.model_dump(), hashed_password=hashed_password)
-    add_data_stmt = (
-        insert(UsersModel).values(**schema_to_add.model_dump()).returning(UsersModel)
-    )
-    sql_respond = await db.execute(add_data_stmt)
-    print(add_data_stmt.compile(compile_kwargs={"literal_binds": True}))
-    result = sql_respond.scalar_one()
-    result_1 = UserResponseSchema.model_validate(result, from_attributes=True)
-    await db.commit()
-    return {'status': 'ok', 'data': UserResponseSchema.model_validate(result_1, from_attributes=True)}
+	response.set_cookie("access_token", access_token)
+	logger.info("User authenticated, received JWT token")
+	return {"status": "OK", "access_token": access_token, "token_type": "Bearer"}

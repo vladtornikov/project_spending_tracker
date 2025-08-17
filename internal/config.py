@@ -25,7 +25,7 @@ class DatabaseConfig(BaseModel):
 
 	@property
 	def DB_URL(self):
-		return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+		return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS.get_secret_value()}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
 
 class ServerConfig(BaseModel):
@@ -43,10 +43,11 @@ class LoggerConfig(BaseModel):
 class Settings(BaseSettings):
 	# Core settings
 	environment: str = Field(default="development")
+	jwt_secret_key: str
+	jwt_algorithm: str
+	access_token_expire_minutes: int
 
 	# Database nested config from dote_env file
-	# кстати, а есть какое-нибудь название для такого подхода, когда мы присваем атрибуты классу внутри другого класса? #noqa: E501
-	# если правильно помню, вроде на уровне экземпляров класса это называется композицией (есть еше агрегация) #noqa: E501
 	database: DatabaseConfig
 	model_config = SettingsConfigDict(
 		env_file=(env_path, ".env.production"), env_nested_delimiter="__"

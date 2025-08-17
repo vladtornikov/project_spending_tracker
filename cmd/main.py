@@ -1,5 +1,4 @@
 import logging
-import signal
 import sys
 import time
 from collections.abc import Awaitable
@@ -13,6 +12,7 @@ from fastapi import FastAPI, Request, Response
 sys.path.append(str(Path(__file__).parents[1]))
 
 from internal.config import settings
+from internal.controllers_API.auth_API import router
 from internal.logger import configure_logging, logger_dep
 
 
@@ -24,14 +24,15 @@ async def lifespan(app: FastAPI):
 	def handle_shutdown_signal(signum, frame):
 		app.state.logger.info("received shutdown signal: %s %s", signum, format)
 
-	signal.signal(signal.SIGINT, handle_shutdown_signal)
-	signal.signal(signal.SIGBREAK, handle_shutdown_signal)
+	# signal.signal(signal.SIGINT, handle_shutdown_signal)
+	# signal.signal(signal.SIGBREAK, handle_shutdown_signal)
 	app.state.logger.info("Start the application")
 	yield
 	app.state.logger.info("Shutdown the application")
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(router)
 
 
 @app.middleware("http")
@@ -66,5 +67,5 @@ if __name__ == "__main__":
 		"main:app",
 		host=settings.server.host,
 		port=settings.server.port,
-		reload=settings.server.reload,
+		reload=True,
 	)

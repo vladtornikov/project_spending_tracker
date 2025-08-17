@@ -1,9 +1,9 @@
 import logging
 import sys
-from pythonjsonlogger.json import JsonFormatter
 from typing import Annotated, Optional
 
 from fastapi import Depends
+from pythonjsonlogger.json import JsonFormatter
 
 from internal.config import settings
 
@@ -12,14 +12,21 @@ def configure_logging(level: Optional[str] = None) -> logging.Logger:
 	if level is None:
 		level = settings.logger.level
 
-	if settings.environment == 'development':
-		formatter = logging.Formatter(fmt=settings.logger.format, datefmt=settings.logger.date_format)
+	if settings.environment == "development":
+		formatter = logging.Formatter(
+			fmt=settings.logger.format, datefmt=settings.logger.date_format
+		)
 
 	else:
 		formatter = JsonFormatter(
 			fmt=settings.logger.format,
 			datefmt=settings.logger.date_format,
-			rename_fields={'asctime': 'timestamp', 'filename': 'service', 'lineno': 'line', 'levelname': 'level'},
+			rename_fields={
+				"asctime": "timestamp",
+				"filename": "service",
+				"lineno": "line",
+				"levelname": "level",
+			},
 		)
 
 	handler = logging.StreamHandler(stream=sys.stdout)
@@ -27,7 +34,7 @@ def configure_logging(level: Optional[str] = None) -> logging.Logger:
 	logging.basicConfig(
 		level=level,
 		handlers=[handler],
-		)
+	)
 	return get_logger()
 
 
