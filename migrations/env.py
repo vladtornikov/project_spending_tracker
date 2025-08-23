@@ -7,7 +7,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from internal.config import settings
-from internal.database import BaseModel
+from internal.database import BaseORM
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -23,13 +23,13 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 
-target_metadata = BaseModel.metadata
+target_metadata = BaseORM.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-config.set_main_option("sqlalchemy.url", settings.env.DB_URL)
+config.set_main_option("sqlalchemy.url", settings.database.DB_URL)
 
 
 def run_migrations_offline() -> None:

@@ -28,6 +28,22 @@ class IncorrectPasswordException(BaseException):
 	detail = "Неверный пароль"
 
 
+class IncorrectTokenException(BaseException):
+	detail = "Неверный токен доступа"
+
+
+class TokenExpiredException(BaseException):
+	detail = "Просроченный токен доступа"
+
+
+class ObjectNotFoundException(BaseException):
+	detail = "Объект не найден"
+
+
+class CategoryNotFoundException(ObjectNotFoundException):
+	detail = "Категория не найдена"
+
+
 class BaseHTTPException(HTTPException):
 	status_code = 500
 	detail = None
@@ -43,9 +59,29 @@ class UserEmailAlreadyExistsHTTPException(BaseHTTPException):
 
 class EmailNotFoundHTTPException(BaseHTTPException):
 	status_code = 404
-	detail = "Пользователь с таким email не зарегестрирован"
+	detail = "Пользователь с таким email не зарегистрирован"
 
 
 class IncorrectPasswordHTTPException(BaseHTTPException):
 	status_code = 403
 	detail = "Неверный пароль"
+
+
+class NoAccessTokenHTTPException(BaseHTTPException):
+	status_code = 401
+	detail = "Не предоставлен токен доступа"
+
+
+class IncorrectTokenHTTPException(BaseHTTPException):
+	status_code = 401
+	detail = "Некорректный токен"
+
+
+class ExpiredTokenHTTPException(BaseHTTPException):
+	status_code = 401
+	detail = "Просроченный токен"
+
+
+class CategoryNotFoundHTTPException(BaseHTTPException):
+	status_code = 404
+	detail = "Категория не найдена, проверьте правильность category_id и user_id"

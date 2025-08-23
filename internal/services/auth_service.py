@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 import jwt
 from passlib.context import CryptContext
@@ -7,8 +6,10 @@ from passlib.context import CryptContext
 from internal.exceptions import (
 	EmailNotFoundException,
 	IncorrectPasswordException,
+	IncorrectTokenException,
 	ObjectAlreadyExistsException,
 	ObjectNotFoundException,
+	TokenExpiredException,
 	UserAlreadyExistsException,
 )
 from internal.schemas.auth import (
@@ -33,20 +34,34 @@ class AuthService(BaseService):
 		return self.pwd_context.verify(plain_password, hashed_password)
 
 	@staticmethod
-	def create_access_token(
-		payload_data: dict, expires_delta: Optional[timedelta] = None
-	) -> str:
-		to_encode = payload_data.copy()
+	def encode_jwt(
+		payload: dict,
+		private_key: str = settings.jwt.private_key_path.read_text(),
+		algorithm: str = settings.jwt.algorithm,
+		expire_minutes: int = settings.jwt.access_token_expired_minutes,
+	):
+		to_encode = payload.copy()
 		now = datetime.now(timezone.utc)
-		if expires_delta:
-			expire = now + expires_delta
-		else:
-			expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+		expire = now + timedelta(minutes=expire_minutes)
 		to_encode.update({"exp": expire, "iat": now})
-		encoded_jwt = jwt.encode(
-			to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
-		)
+		encoded_jwt = jwt.encode(to_encode, private_key, algorithm=algorithm)
 		return encoded_jwt
+
+	def decode_token(
+		self,
+		access_token: str,
+		public_key: str = settings.jwt.public_key_path.read_text(),
+		algorithm: str = settings.jwt.algorithm,
+	) -> dict:
+		try:
+			return jwt.decode(access_token, public_key, algorithms=algorithm)
+		except jwt.exceptions.ExpiredSignatureError as e:
+			self.logger.exception("Просроченный токен доступа")
+			raise TokenExpiredException from e
+
+		except jwt.exceptions.InvalidTokenError as e:
+			self.logger.exception("Неверный токен доступа")
+			raise IncorrectTokenException from e
 
 	async def create_new_user(
 		self, user_data: UserRequestRegisterSchema
@@ -75,11 +90,20 @@ class AuthService(BaseService):
 				await self.db.auth.get_user_with_hashed_password(auth_data.email)
 			)
 		except ObjectNotFoundException as ex:
+			self.logger.exception(
+				"Ошибка! Пользователь с такой эл. почтой %s не найден", auth_data.email
+			)
 			raise EmailNotFoundException from ex
+
 		if not self.verify_password(auth_data.password, auth_user.hashed_password):
+			self.logger.warning(
+				"Ошибка! Неверный пароль для пользователя с эл. почтой %s",
+				auth_data.email,
+			)
 			raise IncorrectPasswordException
 
-		access_token = self.create_access_token(
-			{"sub": auth_user.id, "email": auth_user.email}
-		)
+		access_token = self.encode_jwt({"sub": str(auth_user.id)})
 		return access_token
+
+	async def get_data_about_user(self, user_id: int) -> SignupResponse:
+		return await self.db.auth.get_one_or_none(id=user_id)

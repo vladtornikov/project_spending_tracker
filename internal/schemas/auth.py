@@ -41,7 +41,7 @@ class UserAddSchema(OptionalColumns):
 
 class SignupResponse(OptionalColumns):
 	id: int
-	email: EmailStr
+	email: EmailStr = None
 
 
 class AuthenticateUser(BaseModel):

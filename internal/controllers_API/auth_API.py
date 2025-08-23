@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Body, Form, Response
+from typing import Annotated
+
+from fastapi import APIRouter, Body, Form
 from pydantic import EmailStr
 
-from internal.dependencies import DB_Dep
+from internal.dependencies import DB_Dep, User_id_Dep
 from internal.exceptions import (
 	EmailNotFoundException,
 	EmailNotFoundHTTPException,
@@ -18,7 +20,7 @@ from internal.schemas.auth import (
 )
 from internal.services.auth_service import AuthService
 
-router = APIRouter(prefix="/api/v1", tags=["Authorization and authentication"])
+router = APIRouter(prefix="/api/v1", tags=["Authentication and JWT token"])
 
 
 @router.post("/signup", summary="Create a new user", response_model=dict)
@@ -37,30 +39,40 @@ async def create_new_user(
 	),
 ) -> dict:  # noqa: B008
 	try:
-		user: SignupResponse = await AuthService(db, logger).create_new_user(user_data)
-	except UserAlreadyExistsException:
-		raise UserEmailAlreadyExistsHTTPException
+		user: SignupResponse = await AuthService(db).create_new_user(user_data)
+	except UserAlreadyExistsException as e:
+		raise UserEmailAlreadyExistsHTTPException from e
 	logger.info("User signed up, user_id: %s, user_email: %s", user.id, user.email)
 	return {"status": "ok", "data": user}
 
 
-@router.post("/signin", summary="Authenticate user", response_model=dict)
+@router.post("/signin", summary="Signin user", response_model=dict)
 async def authenticate_user(
-	response: Response,
 	db: DB_Dep,
 	logger: logger_dep,
-	user_email: EmailStr = Form(),
-	password: str = Form(),
+	username: Annotated[EmailStr, Form()],
+	password: Annotated[str, Form()],
 ) -> dict:
 	try:
-		access_token: str = await AuthService(db, logger).auth_user(
-			AuthenticateUser(email=user_email, password=password)
+		access_token: str = await AuthService(db).auth_user(
+			AuthenticateUser(email=username, password=password)
 		)
 	except EmailNotFoundException as ex:
 		raise EmailNotFoundHTTPException from ex
 	except IncorrectPasswordException as ex:
 		raise IncorrectPasswordHTTPException from ex
 
-	response.set_cookie("access_token", access_token)
 	logger.info("User authenticated, received JWT token")
 	return {"status": "OK", "access_token": access_token, "token_type": "Bearer"}
+
+
+@router.post(
+	"/verify",
+	summary="Get information about authenticated user",
+	response_model=SignupResponse
+)
+
+async def get_auth_user_info(db: DB_Dep, logger: logger_dep, user_id: User_id_Dep):
+	user: SignupResponse = await AuthService(db).get_data_about_user(user_id)
+	logger.info("Get data about the user")
+	return user

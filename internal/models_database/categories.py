@@ -1,10 +1,9 @@
-import uuid
 from enum import Enum
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import Enum as SQLEnum
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, func
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import Mapped, mapped_column
 
 from internal.database import BaseORM
@@ -20,13 +19,19 @@ class CategoryTypeEnum(Enum):
 class CategoriesModel(BaseORM):
 	__tablename__ = "categories"
 
-	category_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+	category_id: Mapped[UUID] = mapped_column(
+		primary_key=True, server_default=func.gen_random_uuid()
+	)
 	title: Mapped[str]
 	description: Mapped[Optional[str]] = mapped_column(nullable=True)
 	user_id: Mapped[int] = mapped_column(ForeignKey(UsersModel.id))
 	category_type: Mapped[CategoryTypeEnum] = mapped_column(
-		SQLEnum(
+		ENUM(
 			CategoryTypeEnum,
+			create_type=False,
+			check_first=False,
+			inherit_schema=True,
+			name="categorytypeenum",
 			values_callable=lambda enum_cls: [e.value for e in enum_cls],
 		)
 	)

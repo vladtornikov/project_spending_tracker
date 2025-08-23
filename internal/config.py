@@ -28,6 +28,13 @@ class DatabaseConfig(BaseModel):
 		return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS.get_secret_value()}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
 
+class AuthJwt(BaseModel):
+	private_key_path: Path = config_dir / "certs" / "jwt-private.pem"
+	public_key_path: Path = config_dir / "certs" / "jwt-public.pem"
+	algorithm: str = "RS256"
+	access_token_expired_minutes: int = 15
+
+
 class ServerConfig(BaseModel):
 	host: str
 	port: int
@@ -43,12 +50,10 @@ class LoggerConfig(BaseModel):
 class Settings(BaseSettings):
 	# Core settings
 	environment: str = Field(default="development")
-	jwt_secret_key: str
-	jwt_algorithm: str
-	access_token_expire_minutes: int
 
 	# Database nested config from dote_env file
 	database: DatabaseConfig
+	jwt: AuthJwt = Field(default_factory=AuthJwt)
 	model_config = SettingsConfigDict(
 		env_file=(env_path, ".env.production"), env_nested_delimiter="__"
 	)
