@@ -86,12 +86,12 @@ class BaseRepository:
 		return [self.mapper.from_SQL_to_pydantic_model(model) for model in models]
 
 	async def update_model(
-		self, updated_data: BaseModel, **filter_by: dict
+		self, updated_data: BaseModel, exclude_unset: bool = False, **filter_by: dict
 	) -> BaseModel:
 		statement = (
 			update(self.model)
 			.filter_by(**filter_by)
-			.values(**updated_data.model_dump())
+			.values(**updated_data.model_dump(exclude_unset=exclude_unset))
 			.returning(self.model)
 		)
 
@@ -100,11 +100,20 @@ class BaseRepository:
 			statement.compile(compile_kwargs={"literal_binds": True}),
 		)
 
-		result = await self.session.execute(statement)
+		try:
+			result = await self.session.execute(statement)
+
+		except IntegrityError as ex:
+			if isinstance(ex.orig.__cause__, UniqueViolationError):
+				self.logger.exception(
+					"Не удалось добавить данные в базу, входные данные: %s", filter_by
+				)
+				raise ObjectAlreadyExistsException from ex
+
 		model = result.scalar_one_or_none()
 		if not model:
 			self.logger.error(
-				"Ошибка! Категория с такими данными %s не найдена", filter_by
+				"Ошибка! Не удалось найти данные в БД с такими входными данными %s", filter_by
 			)
 			raise ObjectNotFoundException
 		return self.mapper.from_SQL_to_pydantic_model(model)
@@ -121,6 +130,6 @@ class BaseRepository:
 		model = result.scalar_one_or_none()
 		if not model:
 			self.logger.error(
-				"Ошибка! Категория с такими данными %s не найдена", filter_by
+				"Ошибка! Не удалось найти данные в БД с такими входными данными %s", filter_by
 			)
 			raise ObjectNotFoundException

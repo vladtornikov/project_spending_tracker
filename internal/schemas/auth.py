@@ -53,3 +53,7 @@ class UserResponseSchemaWithHashedPassword(BaseModel):
 	id: int
 	email: EmailStr
 	hashed_password: str
+
+class UserPartiallyUpdate(OptionalColumns):
+	email: Optional[EmailStr] = None
+

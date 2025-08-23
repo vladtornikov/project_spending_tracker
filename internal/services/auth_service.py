@@ -11,13 +11,14 @@ from internal.exceptions import (
 	ObjectNotFoundException,
 	TokenExpiredException,
 	UserAlreadyExistsException,
+	UserNotFoundException
 )
 from internal.schemas.auth import (
 	AuthenticateUser,
 	SignupResponse,
 	UserAddSchema,
 	UserRequestRegisterSchema,
-	UserResponseSchemaWithHashedPassword,
+	UserResponseSchemaWithHashedPassword, UserPartiallyUpdate,
 )
 
 from ..config import settings
@@ -107,3 +108,25 @@ class AuthService(BaseService):
 
 	async def get_data_about_user(self, user_id: int) -> SignupResponse:
 		return await self.db.auth.get_one_or_none(id=user_id)
+
+	async def partially_update_user(
+			self,
+			updated_data: UserPartiallyUpdate,
+			user_id: int,
+	) -> SignupResponse:
+
+		try:
+			result = await self.db.auth.update_model(updated_data, exclude_unset=True, id=user_id)
+
+		except ObjectNotFoundException as e:
+			raise UserNotFoundException from e
+
+		except ObjectAlreadyExistsException as e:
+			self.logger.exception(
+				"Ошибка! Пользователь с такой эл. почтой %s уже существует",
+				updated_data.email,
+			)
+			raise UserAlreadyExistsException from e
+
+		await self.db.commit()
+		return result
