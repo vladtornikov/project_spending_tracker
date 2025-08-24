@@ -1,6 +1,7 @@
 from uuid import UUID
 
-from internal.exceptions import CategoryNotFoundException, ObjectNotFoundException
+from internal.exceptions import CategoryNotFoundException, ObjectNotFoundException, ObjectAlreadyExistsException, \
+	CategoryNameExistsException
 from internal.schemas.categories import (
 	AddCategoryWithUserId,
 	RequestAddCategory,
@@ -22,9 +23,13 @@ class CategoryService(BaseService):
 		return result
 
 	async def add_category(self, data: AddCategoryWithUserId) -> ResponseCategorySchema:
-		result: ResponseCategorySchema = await self.db.category.add_to_the_database(
+		try:
+			result: ResponseCategorySchema = await self.db.category.add_to_the_database(
 			data.model_dump()
-		)
+			)
+		except ObjectAlreadyExistsException as e:
+			raise CategoryNameExistsException from e
+
 		await self.db.commit()
 		return result
 

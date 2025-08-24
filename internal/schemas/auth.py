@@ -54,6 +54,6 @@ class UserResponseSchemaWithHashedPassword(BaseModel):
 	email: EmailStr
 	hashed_password: str
 
+
 class UserPartiallyUpdate(OptionalColumns):
 	email: Optional[EmailStr] = None
-

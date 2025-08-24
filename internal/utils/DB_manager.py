@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from internal.repository.auth_repository import AuthRepository
 from internal.repository.category_repository import CategoryRepository
+from internal.repository.transaction_repository import TransactionRepository
 
 
 class DB_Manager:
@@ -12,6 +13,7 @@ class DB_Manager:
 		self.session = self.session_factory()
 		self.auth = AuthRepository(self.session)
 		self.category = CategoryRepository(self.session)
+		self.transaction = TransactionRepository(self.session)
 
 		return self
 

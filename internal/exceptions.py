@@ -19,6 +19,8 @@ class ObjectNotFoundException(BaseException):
 class UserAlreadyExistsException(BaseException):
 	detail = "Пользователь уже существует"
 
+class CategoryNameExistsException(BaseException):
+	detail = "Категория с таким именем уже существует"
 
 class EmailNotFoundException(BaseException):
 	detail = "Пользователь с таким email не существует"
@@ -43,8 +45,10 @@ class ObjectNotFoundException(BaseException):
 class CategoryNotFoundException(ObjectNotFoundException):
 	detail = "Категория не найдена"
 
+
 class UserNotFoundException(ObjectNotFoundException):
 	detail = "Пользователь не найден"
+
 
 class BaseHTTPException(HTTPException):
 	status_code = 500
@@ -88,6 +92,11 @@ class CategoryNotFoundHTTPException(BaseHTTPException):
 	status_code = 404
 	detail = "Категория не найдена, проверьте правильность category_id и user_id"
 
+
 class UserNotFoundHTTPException(BaseHTTPException):
 	status_code = 404
 	detail = "Пользователь не найден, проверьте правильность введеных данных"
+
+class CategoryNameExistsHTTPException(BaseHTTPException):
+	status_code = 409
+	detail = "Категория с таким именем уже существует"

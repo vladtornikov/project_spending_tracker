@@ -11,14 +11,15 @@ from internal.exceptions import (
 	ObjectNotFoundException,
 	TokenExpiredException,
 	UserAlreadyExistsException,
-	UserNotFoundException
+	UserNotFoundException,
 )
 from internal.schemas.auth import (
 	AuthenticateUser,
 	SignupResponse,
 	UserAddSchema,
+	UserPartiallyUpdate,
 	UserRequestRegisterSchema,
-	UserResponseSchemaWithHashedPassword, UserPartiallyUpdate,
+	UserResponseSchemaWithHashedPassword,
 )
 
 from ..config import settings
@@ -110,13 +111,14 @@ class AuthService(BaseService):
 		return await self.db.auth.get_one_or_none(id=user_id)
 
 	async def partially_update_user(
-			self,
-			updated_data: UserPartiallyUpdate,
-			user_id: int,
+		self,
+		updated_data: UserPartiallyUpdate,
+		user_id: int,
 	) -> SignupResponse:
-
 		try:
-			result = await self.db.auth.update_model(updated_data, exclude_unset=True, id=user_id)
+			result = await self.db.auth.update_model(
+				updated_data, exclude_unset=True, id=user_id
+			)
 
 		except ObjectNotFoundException as e:
 			raise UserNotFoundException from e

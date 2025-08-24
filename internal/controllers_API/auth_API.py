@@ -18,7 +18,8 @@ from internal.logger import logger_dep
 from internal.schemas.auth import (
 	AuthenticateUser,
 	SignupResponse,
-	UserRequestRegisterSchema, UserPartiallyUpdate,
+	UserPartiallyUpdate,
+	UserRequestRegisterSchema,
 )
 from internal.services.auth_service import AuthService
 
@@ -71,24 +72,25 @@ async def authenticate_user(
 @router.post(
 	"/verify",
 	summary="Get information about authenticated user",
-	response_model=SignupResponse
+	response_model=SignupResponse,
 )
-
 async def get_auth_user_info(db: DB_Dep, logger: logger_dep, user_id: User_id_Dep):
 	user: SignupResponse = await AuthService(db).get_data_about_user(user_id)
 	logger.info("Get data about the user")
 	return user
 
-@router.patch(path='/users', summary='Update user data', response_model=SignupResponse)
 
+@router.patch(path="/users", summary="Update user data", response_model=SignupResponse)
 async def update_user(
-		db: DB_Dep,
-		logger: logger_dep,
-		user_id: User_id_Dep,
-		updated_data: UserPartiallyUpdate
+	db: DB_Dep,
+	logger: logger_dep,
+	user_id: User_id_Dep,
+	updated_data: UserPartiallyUpdate,
 ):
 	try:
-		result: SignupResponse = await AuthService(db).partially_update_user(updated_data, user_id)
+		result: SignupResponse = await AuthService(db).partially_update_user(
+			updated_data, user_id
+		)
 
 	except UserNotFoundException as e:
 		raise UserNotFoundHTTPException from e
@@ -96,5 +98,5 @@ async def update_user(
 	except UserAlreadyExistsException as e:
 		raise UserEmailAlreadyExistsHTTPException from e
 
-	logger.info('Successfully updated data about user')
+	logger.info("Successfully updated data about user")
 	return result

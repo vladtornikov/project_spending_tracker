@@ -3,8 +3,8 @@ from typing import Optional
 
 from asyncpg.exceptions import UniqueViolationError
 from pydantic import BaseModel
-from sqlalchemy import insert, select, update, delete
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy import delete, insert, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from internal.exceptions import ObjectAlreadyExistsException, ObjectNotFoundException
@@ -24,10 +24,10 @@ class BaseRepository:
 	async def add_to_the_database(self, data: dict) -> BaseModel:
 		add_data_stmt = insert(self.model).values(**data).returning(self.model)
 
-		self.logger.info(
-			"SQL query: %s",
-			add_data_stmt.compile(compile_kwargs={"literal_binds": True}),
-		)
+		# self.logger.info(
+		# 	"SQL query: %s",
+		# 	add_data_stmt.compile(compile_kwargs={"literal_binds": True}),
+		# )
 
 		try:
 			result = await self.session.execute(add_data_stmt)
@@ -69,7 +69,6 @@ class BaseRepository:
 		offset: Optional[int] = None,
 		**filter_by: dict,
 	) -> list[BaseModel]:
-
 		query = select(self.model).filter_by(**filter_by)
 		if limit is not None:
 			query = query.limit(limit)
@@ -113,13 +112,13 @@ class BaseRepository:
 		model = result.scalar_one_or_none()
 		if not model:
 			self.logger.error(
-				"Ошибка! Не удалось найти данные в БД с такими входными данными %s", filter_by
+				"Ошибка! Не удалось найти данные в БД с такими входными данными %s",
+				filter_by,
 			)
 			raise ObjectNotFoundException
 		return self.mapper.from_SQL_to_pydantic_model(model)
 
 	async def delete(self, **filter_by: dict) -> None:
-
 		statement = delete(self.model).filter_by(**filter_by).returning(self.model)
 
 		self.logger.info(
@@ -130,6 +129,7 @@ class BaseRepository:
 		model = result.scalar_one_or_none()
 		if not model:
 			self.logger.error(
-				"Ошибка! Не удалось найти данные в БД с такими входными данными %s", filter_by
+				"Ошибка! Не удалось найти данные в БД с такими входными данными %s",
+				filter_by,
 			)
 			raise ObjectNotFoundException

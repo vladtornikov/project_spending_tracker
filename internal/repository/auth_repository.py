@@ -21,9 +21,7 @@ class AuthRepository(BaseRepository):
 		result = await self.session.execute(query)
 		res = result.scalar_one_or_none()
 		if not res:
-			self.logger.error(
-				"Не удалось найти данные в БД с таким email: %s", email
-			)
+			self.logger.error("Не удалось найти данные в БД с таким email: %s", email)
 			raise ObjectNotFoundException
 		return UserResponseSchemaWithHashedPassword.model_validate(
 			res, from_attributes=True

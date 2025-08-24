@@ -19,19 +19,15 @@ class RequestAddCategory(BaseModel):
 
 	@field_validator("category_type", mode="before")
 	@classmethod
-	def normalize_enum(cls, data: str) -> str:
-		return data.strip().lower()
+	def normalize_enum(cls, data) -> str:
+		if isinstance(data, str):
+			data = data.strip().lower()
+		return data
 
 
 class AddCategoryWithUserId(RequestAddCategory):
 	user_id: int
 
 
-class ResponseCategorySchema(BaseModel):
-	model_config = ConfigDict(use_enum_values=True, from_attributes=True)
-
+class ResponseCategorySchema(AddCategoryWithUserId):
 	category_id: UUID
-	title: str
-	description: Optional[str] = None
-	user_id: int
-	category_type: CategoryEnum

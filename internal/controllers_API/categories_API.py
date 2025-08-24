@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from internal.dependencies import DB_Dep, PaginationDep, User_id_Dep
 from internal.exceptions import (
 	CategoryNotFoundException,
-	CategoryNotFoundHTTPException,
+	CategoryNotFoundHTTPException, CategoryNameExistsException, CategoryNameExistsHTTPException,
 )
 from internal.logger import logger_dep
 from internal.schemas.categories import (
@@ -49,9 +49,13 @@ async def get_all_categories(
 async def add_category(
 	db: DB_Dep, logger: logger_dep, user_id: User_id_Dep, data: RequestAddCategory
 ):
-	result: ResponseCategorySchema = await CategoryService(db).add_category(
+	try:
+		result: ResponseCategorySchema = await CategoryService(db).add_category(
 		AddCategoryWithUserId(**data.model_dump(), user_id=user_id)
-	)
+		)
+	except CategoryNameExistsException as e:
+		raise CategoryNameExistsHTTPException from e
+
 	logger.info(
 		"Successfully add category to the database for user %s, data: %s",
 		user_id,
@@ -84,12 +88,13 @@ async def update_category(
 	logger.info("Successfully updated category, new columns %s", result.model_dump())
 	return result
 
-@router.delete(path='/{category_id}', summary='Delete category', response_model=dict)
+
+@router.delete(path="/{category_id}", summary="Delete category", response_model=dict)
 async def delete_category(
-		db: DB_Dep,
-		logger: logger_dep,
-		user_id: User_id_Dep,
-		category_id: UUID,
+	db: DB_Dep,
+	logger: logger_dep,
+	user_id: User_id_Dep,
+	category_id: UUID,
 ):
 	try:
 		await CategoryService(db).delete_category(user_id, category_id)
@@ -97,4 +102,4 @@ async def delete_category(
 		raise CategoryNotFoundHTTPException from e
 
 	logger.info("Successfully deleted category with id %s", category_id)
-	return {'status': 'success'}
+	return {"status": "success"}
