@@ -17,5 +17,5 @@ exclude = ["migrations/*.py"]
 
 [format]
 quote-style = "double"
-indent-style = "tab"
-exclude = ["migrations/*.py"]
+indent-style = "space"
+exclude = ["migrations/*.py", 'Makefile']

@@ -4,5 +4,5 @@ from internal.repository.data_mapper.data_mappers import CategoryDataMapper
 
 
 class CategoryRepository(BaseRepository):
-	model = CategoriesModel
-	mapper = CategoryDataMapper
+    model = CategoriesModel
+    mapper = CategoryDataMapper

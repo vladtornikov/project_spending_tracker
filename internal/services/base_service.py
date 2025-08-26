@@ -6,7 +6,7 @@ from internal.utils.DB_manager import DB_Manager
 
 
 class BaseService:
-	logger: logging.Logger = get_logger()
+    logger: logging.Logger = get_logger()
 
-	def __init__(self, db: Optional[DB_Manager] = None):
-		self.db = db
+    def __init__(self, db: Optional[DB_Manager] = None):
+        self.db = db

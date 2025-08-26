@@ -20,17 +20,17 @@ from internal.logger import configure_logging, logger_dep
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-	# добавляем в атрибут state наш логгер для логгирования в middleware, в эндпоинтах будем использовать через DI #noqa: E501
-	app.state.logger: logging.Logger = configure_logging()
+    # добавляем в атрибут state наш логгер для логгирования в middleware, в эндпоинтах будем использовать через DI #noqa: E501
+    app.state.logger: logging.Logger = configure_logging()
 
-	def handle_shutdown_signal(signum, frame):
-		app.state.logger.info("received shutdown signal: %s %s", signum, format)
+    def handle_shutdown_signal(signum, frame):
+        app.state.logger.info("received shutdown signal: %s %s", signum, format)
 
-	# signal.signal(signal.SIGINT, handle_shutdown_signal)
-	# signal.signal(signal.SIGBREAK, handle_shutdown_signal)
-	app.state.logger.info("Start the application")
-	yield
-	app.state.logger.info("Shutdown the application")
+    # signal.signal(signal.SIGINT, handle_shutdown_signal)
+    # signal.signal(signal.SIGBREAK, handle_shutdown_signal)
+    app.state.logger.info("Start the application")
+    yield
+    app.state.logger.info("Shutdown the application")
 
 
 app = FastAPI(lifespan=lifespan)
@@ -41,35 +41,35 @@ app.include_router(transaction_router)
 
 @app.middleware("http")
 async def add_process_time_to_request(
-	request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
 ) -> Response:
-	app_logger: logging.Logger = request.app.state.logger
-	app_logger.info("New request %s to %s", request.method, request.url)
+    app_logger: logging.Logger = request.app.state.logger
+    app_logger.info("New request %s to %s", request.method, request.url)
 
-	start_time = time.perf_counter()
-	response = await call_next(request)
-	process_time = time.perf_counter() - start_time
+    start_time = time.perf_counter()
+    response = await call_next(request)
+    process_time = time.perf_counter() - start_time
 
-	app_logger.info(
-		"Handled request %s %s in %.3f sec, status code is %s",
-		request.method,
-		request.url,
-		process_time,
-		response.status_code,
-	)
-	return response
+    app_logger.info(
+        "Handled request %s %s in %.3f sec, status code is %s",
+        request.method,
+        request.url,
+        process_time,
+        response.status_code,
+    )
+    return response
 
 
 @app.get("/")
 def root(app_logger: logger_dep):  # здесь уже dependency
-	app_logger.info("Basic endpoint")
-	return "Hello!"
+    app_logger.info("Basic endpoint")
+    return "Hello!"
 
 
 if __name__ == "__main__":
-	uvicorn.run(
-		"main:app",
-		host=settings.server.host,
-		port=settings.server.port,
-		reload=True,
-	)
+    uvicorn.run(
+        "main:app",
+        host=settings.server.host,
+        port=settings.server.port,
+        reload=True,
+    )

@@ -5,12 +5,12 @@ from internal.schemas.transaction import TransactionResponse
 
 
 class AuthDataMapper(BaseDataMapper):
-	response_schema = SignupResponse
+    response_schema = SignupResponse
 
 
 class CategoryDataMapper(BaseDataMapper):
-	response_schema = ResponseCategorySchema
+    response_schema = ResponseCategorySchema
 
 
 class TransactrionDataMapper(BaseDataMapper):
-	response_schema = TransactionResponse
+    response_schema = TransactionResponse
