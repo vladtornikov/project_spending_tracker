@@ -1,10 +1,13 @@
 from uuid import UUID
 
+from asyncpg import ForeignKeyViolationError
+
 from internal.exceptions import (
-    CategoryNameExistsException,
-    CategoryNotFoundException,
-    ObjectAlreadyExistsException,
-    ObjectNotFoundException,
+    CategoryNameExists,
+    CategoryNotFound,
+    ConflictHasTransactions,
+    ObjectAlreadyExists,
+    ObjectNotFound,
 )
 from internal.schemas.categories import (
     AddCategoryWithUserId,
@@ -29,10 +32,10 @@ class CategoryService(BaseService):
     async def add_category(self, data: AddCategoryWithUserId) -> ResponseCategorySchema:
         try:
             result: ResponseCategorySchema = await self.db.category.add_to_the_database(
-                data.model_dump()
+                **data.model_dump()
             )
-        except ObjectAlreadyExistsException as e:
-            raise CategoryNameExistsException from e
+        except ObjectAlreadyExists as e:
+            raise CategoryNameExists from e
 
         await self.db.commit()
         return result
@@ -44,13 +47,13 @@ class CategoryService(BaseService):
             result: ResponseCategorySchema = await self.db.category.update_model(
                 updated_data, user_id=user_id, category_id=category_id
             )
-        except ObjectNotFoundException as e:
+        except ObjectNotFound as e:
             self.logger.exception(
                 "Ошибка! Категория с таким id %s и таким юзером %s не найдена",
                 category_id,
                 user_id,
             )
-            raise CategoryNotFoundException from e
+            raise CategoryNotFound from e
 
         await self.db.commit()
         return result
@@ -58,12 +61,14 @@ class CategoryService(BaseService):
     async def delete_category(self, user_id: int, category_id: UUID) -> None:
         try:
             await self.db.category.delete(user_id=user_id, category_id=category_id)
-        except ObjectNotFoundException as e:
+        except ObjectNotFound as e:
             self.logger.exception(
                 "Ошибка! Категория с таким id %s и таким юзером %s не найдена",
                 category_id,
                 user_id,
             )
-            raise CategoryNotFoundException from e
+            raise CategoryNotFound from e
+        except ForeignKeyViolationError as e:
+            raise ConflictHasTransactions from e
 
         await self.db.commit()

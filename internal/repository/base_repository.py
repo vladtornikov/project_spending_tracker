@@ -7,7 +7,7 @@ from sqlalchemy import delete, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from internal.exceptions import ObjectAlreadyExistsException, ObjectNotFoundException
+from internal.exceptions import ObjectAlreadyExists, ObjectNotFound
 from internal.logger import get_logger
 
 from .data_mapper.base_data_mapper import BaseDataMapper
@@ -21,7 +21,7 @@ class BaseRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def add_to_the_database(self, data: dict) -> BaseModel:
+    async def add_to_the_database(self, **data: dict) -> BaseModel:
         add_data_stmt = insert(self.model).values(**data).returning(self.model)
 
         # self.logger.info(
@@ -36,7 +36,7 @@ class BaseRepository:
                 self.logger.exception(
                     "Не удалось добавить данные в базу, входные данные: %s", data
                 )
-                raise ObjectAlreadyExistsException from ex
+                raise ObjectAlreadyExists from ex
 
             if isinstance(ex.orig.__cause__, ForeignKeyViolationError):
                 self.logger.exception(
@@ -50,6 +50,7 @@ class BaseRepository:
                     data,
                 )
                 raise ex
+
         model = result.scalar_one()
         return self.mapper.from_SQL_to_pydantic_model(model)
 
@@ -100,10 +101,10 @@ class BaseRepository:
             .returning(self.model)
         )
 
-        self.logger.info(
-            "SQL statement: %s",
-            statement.compile(compile_kwargs={"literal_binds": True}),
-        )
+        # self.logger.info(
+        #     "SQL statement: %s",
+        #     statement.compile(compile_kwargs={"literal_binds": True}),
+        # )
 
         try:
             result = await self.session.execute(statement)
@@ -113,7 +114,7 @@ class BaseRepository:
                 self.logger.exception(
                     "Не удалось добавить данные в базу, входные данные: %s", filter_by
                 )
-                raise ObjectAlreadyExistsException from ex
+                raise ObjectAlreadyExists from ex
 
         model = result.scalar_one_or_none()
         if not model:
@@ -121,7 +122,7 @@ class BaseRepository:
                 "Ошибка! Не удалось найти данные в БД с такими входными данными %s",
                 filter_by,
             )
-            raise ObjectNotFoundException
+            raise ObjectNotFound
         return self.mapper.from_SQL_to_pydantic_model(model)
 
     async def delete(self, **filter_by: dict) -> None:
@@ -131,11 +132,15 @@ class BaseRepository:
             "SQL statement: %s",
             statement.compile(compile_kwargs={"literal_binds": True}),
         )
-        result = await self.session.execute(statement)
-        model = result.scalar_one_or_none()
-        if not model:
-            self.logger.error(
-                "Ошибка! Не удалось найти данные в БД с такими входными данными %s",
-                filter_by,
-            )
-            raise ObjectNotFoundException
+        try:
+            result = await self.session.execute(statement)
+            model = result.scalar_one_or_none()
+            if not model:
+                self.logger.error(
+                    "Ошибка! Не удалось найти данные в БД с такими входными данными %s",
+                    filter_by,
+                )
+                raise ObjectNotFound
+        except IntegrityError as ex:
+            if isinstance(ex.orig.__cause__, ForeignKeyViolationError):
+                raise ForeignKeyViolationError from ex

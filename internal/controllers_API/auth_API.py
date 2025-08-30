@@ -5,14 +5,10 @@ from pydantic import EmailStr
 
 from internal.dependencies import DB_Dep, User_id_Dep
 from internal.exceptions import (
-    EmailNotFoundException,
-    EmailNotFoundHTTPException,
-    IncorrectPasswordException,
-    IncorrectPasswordHTTPException,
-    UserAlreadyExistsException,
-    UserEmailAlreadyExistsHTTPException,
-    UserNotFoundException,
-    UserNotFoundHTTPException,
+    EmailNotFound,
+    IncorrectPassword,
+    UserAlreadyExists,
+    UserNotFound,
 )
 from internal.logger import logger_dep
 from internal.schemas.auth import (
@@ -43,8 +39,8 @@ async def create_new_user(
 ) -> dict:  # noqa: B008
     try:
         user: SignupResponse = await AuthService(db).create_new_user(user_data)
-    except UserAlreadyExistsException as e:
-        raise UserEmailAlreadyExistsHTTPException from e
+    except UserAlreadyExists:
+        raise UserAlreadyExists
     logger.info("User signed up, user_id: %s, user_email: %s", user.id, user.email)
     return {"status": "ok", "data": user}
 
@@ -60,10 +56,10 @@ async def authenticate_user(
         access_token: str = await AuthService(db).auth_user(
             AuthenticateUser(email=username, password=password)
         )
-    except EmailNotFoundException as ex:
-        raise EmailNotFoundHTTPException from ex
-    except IncorrectPasswordException as ex:
-        raise IncorrectPasswordHTTPException from ex
+    except EmailNotFound:
+        raise EmailNotFound
+    except IncorrectPassword:
+        raise IncorrectPassword
 
     logger.info("User authenticated, received JWT token")
     return {"status": "OK", "access_token": access_token, "token_type": "Bearer"}
@@ -92,11 +88,11 @@ async def update_user(
             updated_data, user_id
         )
 
-    except UserNotFoundException as e:
-        raise UserNotFoundHTTPException from e
+    except UserNotFound:
+        raise UserNotFound
 
-    except UserAlreadyExistsException as e:
-        raise UserEmailAlreadyExistsHTTPException from e
+    except UserAlreadyExists:
+        raise UserAlreadyExists
 
     logger.info("Successfully updated data about user")
     return result

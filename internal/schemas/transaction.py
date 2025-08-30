@@ -26,7 +26,7 @@ class RequestAddTransaction(BaseModel):
         decimal.Decimal, Field(ge=0, max_digits=14, decimal_places=2)
     ]
     transaction_date: date
-    category_id: UUID
+    category_title: str | None = None
     description: Optional[str] = Field(default=None, max_length=500)
     other_data: Optional[dict[str, Any]] = None
 
@@ -61,3 +61,12 @@ class RequestGetTransaction(BaseModel):
     start_date: Optional[date] = Field(default=None)
     end_date: Optional[date] = Field(default=None)
     category_id: Optional[UUID] = Field(default=None)
+
+
+class RequestUpdateTransacton(BaseModel):
+    amount: decimal.Decimal = Annotated[
+        decimal.Decimal, Field(ge=0, max_digits=14, decimal_places=2)
+    ]
+    transaction_date: date
+    description: Optional[str] = Field(default=None, max_length=500)
+    other_data: Optional[dict[str, Any]] = None

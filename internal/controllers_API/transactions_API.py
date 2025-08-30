@@ -4,12 +4,17 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query
 
 from internal.dependencies import DB_Dep, PaginationDep, User_id_Dep
-from internal.exceptions import ForeignKeyException, ForeignKeyHTTPException
+from internal.exceptions import (
+    CategoryNotFound,
+    ForeignKeyException,
+    TransactionNotFound,
+)
 from internal.logger import logger_dep
 from internal.schemas.transaction import (
     AddTransactionWithUserID,
     RequestAddTransaction,
     RequestGetTransaction,
+    RequestUpdateTransacton,
     TransactionEnum,
     TransactionResponse,
 )
@@ -30,8 +35,10 @@ async def create_new_transaction(
         result: TransactionResponse = await TransactionService(db).add_transaction(
             AddTransactionWithUserID(**data.model_dump(), user_id=user_id)
         )
-    except ForeignKeyException as e:
-        raise ForeignKeyHTTPException from e
+    except ForeignKeyException:
+        raise ForeignKeyException
+    except CategoryNotFound:
+        raise CategoryNotFound
 
     logger.info(
         "Successfully add transaction to the database for user %s, data: %s",
@@ -73,3 +80,34 @@ async def get_transaction(
         offset=pagination.offset,
     )
     return res
+
+
+@router.put("/transactions/{transaction_id}", summary="Update transaction")
+async def update_transaction(
+    db: DB_Dep,
+    logger: logger_dep,
+    user_id: User_id_Dep,
+    transaction_id: UUID,
+    to_update: RequestUpdateTransacton,
+):
+    try:
+        result: TransactionResponse = await TransactionService(db).update_transaction(
+            to_update, user_id, transaction_id
+        )
+    except TransactionNotFound:
+        raise TransactionNotFound
+    return result
+
+
+@router.delete("/transactions/{transaction_id}", summary="Delete transaction")
+async def delete_transaction(
+    db: DB_Dep,
+    logger: logger_dep,
+    user_id: User_id_Dep,
+    transaction_id: UUID,
+):
+    try:
+        await TransactionService(db).delete_transaction(user_id, transaction_id)
+    except TransactionNotFound:
+        raise TransactionNotFound
+    return {"status": "ok"}

@@ -1,7 +1,7 @@
 from pydantic import EmailStr
 from sqlalchemy import select
 
-from internal.exceptions import ObjectNotFoundException
+from internal.exceptions import ObjectNotFound
 from internal.models_database.users import UsersModel
 from internal.repository.base_repository import BaseRepository
 from internal.repository.data_mapper.data_mappers import AuthDataMapper
@@ -22,7 +22,7 @@ class AuthRepository(BaseRepository):
         res = result.scalar_one_or_none()
         if not res:
             self.logger.error("Не удалось найти данные в БД с таким email: %s", email)
-            raise ObjectNotFoundException
+            raise ObjectNotFound
         return UserResponseSchemaWithHashedPassword.model_validate(
             res, from_attributes=True
         )

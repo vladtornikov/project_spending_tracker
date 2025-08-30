@@ -4,14 +4,14 @@ import jwt
 from passlib.context import CryptContext
 
 from internal.exceptions import (
-    EmailNotFoundException,
-    IncorrectPasswordException,
-    IncorrectTokenException,
-    ObjectAlreadyExistsException,
-    ObjectNotFoundException,
-    TokenExpiredException,
-    UserAlreadyExistsException,
-    UserNotFoundException,
+    EmailNotFound,
+    IncorrectPassword,
+    IncorrectToken,
+    ObjectAlreadyExists,
+    ObjectNotFound,
+    TokenExpired,
+    UserAlreadyExists,
+    UserNotFound,
 )
 from internal.schemas.auth import (
     AuthenticateUser,
@@ -59,11 +59,11 @@ class AuthService(BaseService):
             return jwt.decode(access_token, public_key, algorithms=algorithm)
         except jwt.exceptions.ExpiredSignatureError as e:
             self.logger.exception("Просроченный токен доступа")
-            raise TokenExpiredException from e
+            raise TokenExpired from e
 
         except jwt.exceptions.InvalidTokenError as e:
             self.logger.exception("Неверный токен доступа")
-            raise IncorrectTokenException from e
+            raise IncorrectToken from e
 
     async def create_new_user(
         self, user_data: UserRequestRegisterSchema
@@ -75,14 +75,14 @@ class AuthService(BaseService):
         )
         try:
             result: SignupResponse = await self.db.auth.add_to_the_database(
-                schema_to_add.model_dump()
+                **schema_to_add.model_dump()
             )
-        except ObjectAlreadyExistsException as ex:
+        except ObjectAlreadyExists as ex:
             self.logger.exception(
                 "Ошибка! Пользователь с такой эл. почтой %s уже существует",
                 user_data.email,
             )
-            raise UserAlreadyExistsException from ex
+            raise UserAlreadyExists from ex
         await self.db.commit()
         return result
 
@@ -91,18 +91,18 @@ class AuthService(BaseService):
             auth_user: UserResponseSchemaWithHashedPassword = (
                 await self.db.auth.get_user_with_hashed_password(auth_data.email)
             )
-        except ObjectNotFoundException as ex:
+        except ObjectNotFound as ex:
             self.logger.exception(
                 "Ошибка! Пользователь с такой эл. почтой %s не найден", auth_data.email
             )
-            raise EmailNotFoundException from ex
+            raise EmailNotFound from ex
 
         if not self.verify_password(auth_data.password, auth_user.hashed_password):
             self.logger.warning(
                 "Ошибка! Неверный пароль для пользователя с эл. почтой %s",
                 auth_data.email,
             )
-            raise IncorrectPasswordException
+            raise IncorrectPassword
 
         access_token = self.encode_jwt({"sub": str(auth_user.id)})
         return access_token
@@ -120,15 +120,15 @@ class AuthService(BaseService):
                 updated_data, exclude_unset=True, id=user_id
             )
 
-        except ObjectNotFoundException as e:
-            raise UserNotFoundException from e
+        except ObjectNotFound as e:
+            raise UserNotFound from e
 
-        except ObjectAlreadyExistsException as e:
+        except ObjectAlreadyExists as e:
             self.logger.exception(
                 "Ошибка! Пользователь с такой эл. почтой %s уже существует",
                 updated_data.email,
             )
-            raise UserAlreadyExistsException from e
+            raise UserAlreadyExists from e
 
         await self.db.commit()
         return result

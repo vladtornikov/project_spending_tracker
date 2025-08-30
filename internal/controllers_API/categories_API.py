@@ -4,10 +4,9 @@ from fastapi import APIRouter
 
 from internal.dependencies import DB_Dep, PaginationDep, User_id_Dep
 from internal.exceptions import (
-    CategoryNameExistsException,
-    CategoryNameExistsHTTPException,
-    CategoryNotFoundException,
-    CategoryNotFoundHTTPException,
+    CategoryNameExists,
+    CategoryNotFound,
+    ConflictHasTransactions,
 )
 from internal.logger import logger_dep
 from internal.schemas.categories import (
@@ -55,8 +54,8 @@ async def add_category(
         result: ResponseCategorySchema = await CategoryService(db).add_category(
             AddCategoryWithUserId(**data.model_dump(), user_id=user_id)
         )
-    except CategoryNameExistsException as e:
-        raise CategoryNameExistsHTTPException from e
+    except CategoryNameExists:
+        raise CategoryNameExists
 
     logger.info(
         "Successfully add category to the database for user %s, data: %s",
@@ -66,6 +65,10 @@ async def add_category(
     return result
 
 
+# мне вот не нравится, что у меня в ручках put and delete запрос происходит по айди категории
+# мне кажется, это неудобно. наверное, можно попробовать реализовать через юзер айди и title
+# т.к. в таблице категорий у меня юзер айди и title составляют unique constraint
+# и то же самое, наверное, можно сделать с транзакциями. но я не уверен, что это правильный путь, поэтому пока не буду менять))
 @router.put(
     path="/{category_id}",
     summary="Update category",
@@ -84,8 +87,8 @@ async def update_category(
             user_id,
             category_id,
         )
-    except CategoryNotFoundException as e:
-        raise CategoryNotFoundHTTPException from e
+    except CategoryNotFound:
+        raise CategoryNotFound
 
     logger.info("Successfully updated category, new columns %s", result.model_dump())
     return result
@@ -100,8 +103,10 @@ async def delete_category(
 ):
     try:
         await CategoryService(db).delete_category(user_id, category_id)
-    except CategoryNotFoundException as e:
-        raise CategoryNotFoundHTTPException from e
+    except CategoryNotFound:
+        raise CategoryNotFound
+    except ConflictHasTransactions:
+        raise ConflictHasTransactions
 
     logger.info("Successfully deleted category with id %s", category_id)
     return {"status": "success"}

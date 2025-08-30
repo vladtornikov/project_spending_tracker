@@ -8,6 +8,7 @@ from typing import Callable
 
 import uvicorn
 from fastapi import FastAPI, Request, Response
+from fastapi.responses import JSONResponse
 
 sys.path.append(str(Path(__file__).parents[1]))
 
@@ -15,6 +16,7 @@ from internal.config import settings
 from internal.controllers_API.auth_API import router as auth_router
 from internal.controllers_API.categories_API import router as category_router
 from internal.controllers_API.transactions_API import router as transaction_router
+from internal.exceptions import AppError
 from internal.logger import configure_logging, logger_dep
 
 
@@ -58,6 +60,24 @@ async def add_process_time_to_request(
         response.status_code,
     )
     return response
+
+
+@app.exception_handler(AppError)
+async def validation_exception_error(request: Request, exc: AppError):
+    headers = {}
+    if exc.status_code == 401:
+        headers["WWW-Authenticate"] = exc.www_authenticate
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        headers=headers,
+        content={
+            "error": {
+                "code": exc.code,
+                "message": exc.message,
+            }
+        },
+    )
 
 
 @app.get("/")

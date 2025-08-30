@@ -1,3 +1,4 @@
+from collections.abc import AsyncGenerator
 from enum import StrEnum
 from typing import Annotated
 
@@ -7,19 +8,19 @@ from fastapi.security import (
     OAuth2PasswordBearer,
 )
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from internal.utils.DB_manager import DB_Manager
 
 from .database import async_session_maker
 from .exceptions import (
-    ExpiredTokenHTTPException,
-    IncorrectTokenException,
-    IncorrectTokenHTTPException,
-    TokenExpiredException,
+    IncorrectToken,
+    TokenExpired,
 )
 from .services.auth_service import AuthService
-from .utils.DB_manager import DB_Manager
 
 
-async def get_db() -> DB_Manager:
+async def get_db() -> AsyncGenerator[AsyncSession | None]:
     async with DB_Manager(session_factory=async_session_maker) as db:
         yield db
 
@@ -40,15 +41,23 @@ def get_token(
 
 def get_current_user_id(access_token=Depends(get_token)) -> int:
     try:
-        decoded_token: dict = AuthService().decode_token(access_token)
+        decoded_token: dict = AuthService(DB_Manager).decode_token(access_token)
 
-    except TokenExpiredException as e:
-        raise ExpiredTokenHTTPException from e
+    except TokenExpired:
+        raise TokenExpired
 
-    except IncorrectTokenException as e:
-        raise IncorrectTokenHTTPException from e
+    except IncorrectToken:
+        raise IncorrectToken
 
-    return int(decoded_token.get("sub"))
+    sub = decoded_token.get("sub")
+
+    if not isinstance(sub, (str, int)):
+        raise IncorrectToken
+
+    try:
+        return int(sub)
+    except ValueError:
+        raise IncorrectToken
 
 
 User_id_Dep = Annotated[int, Depends(get_current_user_id)]
