@@ -27,8 +27,9 @@ async def get_db() -> AsyncGenerator[AsyncSession | None]:
 
 DB_Dep = Annotated[DB_Manager, Depends(get_db)]
 
+
 http_bearer = HTTPBearer()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/signin/")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/signin/", auto_error=False)
 
 
 def get_token(
@@ -43,11 +44,11 @@ def get_current_user_id(access_token=Depends(get_token)) -> int:
     try:
         decoded_token: dict = AuthService(DB_Manager).decode_token(access_token)
 
-    except TokenExpired:
-        raise TokenExpired
+    except TokenExpired as e:
+        raise e
 
-    except IncorrectToken:
-        raise IncorrectToken
+    except IncorrectToken as e:
+        raise e
 
     sub = decoded_token.get("sub")
 
@@ -57,7 +58,7 @@ def get_current_user_id(access_token=Depends(get_token)) -> int:
     try:
         return int(sub)
     except ValueError:
-        raise IncorrectToken
+        raise IncorrectToken from ValueError
 
 
 User_id_Dep = Annotated[int, Depends(get_current_user_id)]

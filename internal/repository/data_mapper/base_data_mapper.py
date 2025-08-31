@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class BaseDataMapper:
-    response_schema: BaseModel = None
+    response_schema: type[BaseModel]
 
     @classmethod
     def from_SQL_to_pydantic_model(cls, data):

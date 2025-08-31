@@ -2,13 +2,13 @@ from sqlalchemy import select
 
 from internal.models_database.transactions import TransactionsModel
 from internal.repository.base_repository import BaseRepository
-from internal.repository.data_mapper.data_mappers import TransactrionDataMapper
+from internal.repository.data_mapper.data_mappers import TransactionDataMapper
 from internal.schemas.transaction import TransactionResponse
 
 
 class TransactionRepository(BaseRepository):
     model = TransactionsModel
-    mapper = TransactrionDataMapper
+    mapper = TransactionDataMapper
 
     async def get_filtered_transaction(
         self, user_id: int, limit: int, offset: int, **filters

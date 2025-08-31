@@ -35,10 +35,10 @@ async def create_new_transaction(
         result: TransactionResponse = await TransactionService(db).add_transaction(
             AddTransactionWithUserID(**data.model_dump(), user_id=user_id)
         )
-    except ForeignKeyException:
-        raise ForeignKeyException
-    except CategoryNotFound:
-        raise CategoryNotFound
+    except ForeignKeyException as e:
+        raise e
+    except CategoryNotFound as e:
+        raise e
 
     logger.info(
         "Successfully add transaction to the database for user %s, data: %s",
@@ -94,8 +94,8 @@ async def update_transaction(
         result: TransactionResponse = await TransactionService(db).update_transaction(
             to_update, user_id, transaction_id
         )
-    except TransactionNotFound:
-        raise TransactionNotFound
+    except TransactionNotFound as e:
+        raise e
     return result
 
 
@@ -108,6 +108,6 @@ async def delete_transaction(
 ):
     try:
         await TransactionService(db).delete_transaction(user_id, transaction_id)
-    except TransactionNotFound:
-        raise TransactionNotFound
+    except TransactionNotFound as e:
+        raise e
     return {"status": "ok"}

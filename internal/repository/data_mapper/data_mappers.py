@@ -12,5 +12,5 @@ class CategoryDataMapper(BaseDataMapper):
     response_schema = ResponseCategorySchema
 
 
-class TransactrionDataMapper(BaseDataMapper):
+class TransactionDataMapper(BaseDataMapper):
     response_schema = TransactionResponse

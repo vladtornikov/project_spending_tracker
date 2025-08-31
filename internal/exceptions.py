@@ -14,9 +14,9 @@ class ObjectAlreadyExists(AppError):
     status_code = status.HTTP_409_CONFLICT
 
 
-class UserAlreadyExists(ObjectAlreadyExists):
+class EmailAlreadyExists(ObjectAlreadyExists):
     code = "user_exists"
-    message = "Пользователь уже существует"
+    message = "Пользователь с такой эл. почтой уже существует"
 
 
 class CategoryNameExists(ObjectAlreadyExists):

@@ -4,13 +4,13 @@ import jwt
 from passlib.context import CryptContext
 
 from internal.exceptions import (
+    EmailAlreadyExists,
     EmailNotFound,
     IncorrectPassword,
     IncorrectToken,
     ObjectAlreadyExists,
     ObjectNotFound,
     TokenExpired,
-    UserAlreadyExists,
     UserNotFound,
 )
 from internal.schemas.auth import (
@@ -82,7 +82,7 @@ class AuthService(BaseService):
                 "Ошибка! Пользователь с такой эл. почтой %s уже существует",
                 user_data.email,
             )
-            raise UserAlreadyExists from ex
+            raise EmailAlreadyExists from ex
         await self.db.commit()
         return result
 
@@ -128,7 +128,7 @@ class AuthService(BaseService):
                 "Ошибка! Пользователь с такой эл. почтой %s уже существует",
                 updated_data.email,
             )
-            raise UserAlreadyExists from e
+            raise EmailAlreadyExists from e
 
         await self.db.commit()
         return result

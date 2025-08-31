@@ -54,8 +54,8 @@ async def add_category(
         result: ResponseCategorySchema = await CategoryService(db).add_category(
             AddCategoryWithUserId(**data.model_dump(), user_id=user_id)
         )
-    except CategoryNameExists:
-        raise CategoryNameExists
+    except CategoryNameExists as e:
+        raise e
 
     logger.info(
         "Successfully add category to the database for user %s, data: %s",
@@ -103,10 +103,10 @@ async def delete_category(
 ):
     try:
         await CategoryService(db).delete_category(user_id, category_id)
-    except CategoryNotFound:
-        raise CategoryNotFound
-    except ConflictHasTransactions:
-        raise ConflictHasTransactions
+    except CategoryNotFound as e:
+        raise e
+    except ConflictHasTransactions as e:
+        raise e
 
     logger.info("Successfully deleted category with id %s", category_id)
     return {"status": "success"}

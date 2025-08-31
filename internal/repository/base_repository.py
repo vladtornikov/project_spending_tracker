@@ -1,7 +1,10 @@
 import logging
 from typing import Optional
 
-from asyncpg.exceptions import ForeignKeyViolationError, UniqueViolationError
+from asyncpg.exceptions import (  # type: ignore[import-untyped]
+    ForeignKeyViolationError,
+    UniqueViolationError,
+)
 from pydantic import BaseModel
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.exc import IntegrityError
@@ -10,13 +13,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from internal.exceptions import ObjectAlreadyExists, ObjectNotFound
 from internal.logger import get_logger
 
+from ..database import BaseORM
 from .data_mapper.base_data_mapper import BaseDataMapper
 
 
 class BaseRepository:
-    model = None
+    model: type[BaseORM]
     logger: logging.Logger = get_logger()
-    mapper: BaseDataMapper = None
+    mapper: type[BaseDataMapper]
 
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -32,13 +36,14 @@ class BaseRepository:
         try:
             result = await self.session.execute(add_data_stmt)
         except IntegrityError as ex:
-            if isinstance(ex.orig.__cause__, UniqueViolationError):
+            cause = ex.orig.__cause__  # type: ignore[union-attr]
+            if isinstance(cause, UniqueViolationError):
                 self.logger.exception(
                     "Не удалось добавить данные в базу, входные данные: %s", data
                 )
                 raise ObjectAlreadyExists from ex
 
-            if isinstance(ex.orig.__cause__, ForeignKeyViolationError):
+            elif isinstance(cause, ForeignKeyViolationError):
                 self.logger.exception(
                     "Не удалось добавить данные в базу, входные данные: %s", data
                 )
@@ -110,7 +115,7 @@ class BaseRepository:
             result = await self.session.execute(statement)
 
         except IntegrityError as ex:
-            if isinstance(ex.orig.__cause__, UniqueViolationError):
+            if isinstance(ex.orig.__cause__, UniqueViolationError):  # type: ignore[union-attr]
                 self.logger.exception(
                     "Не удалось добавить данные в базу, входные данные: %s", filter_by
                 )
@@ -142,5 +147,5 @@ class BaseRepository:
                 )
                 raise ObjectNotFound
         except IntegrityError as ex:
-            if isinstance(ex.orig.__cause__, ForeignKeyViolationError):
+            if isinstance(ex.orig.__cause__, ForeignKeyViolationError):  # type: ignore[union-attr]
                 raise ForeignKeyViolationError from ex

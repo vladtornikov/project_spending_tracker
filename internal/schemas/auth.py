@@ -18,7 +18,7 @@ class OptionalColumns(BaseModel):
             try:
                 data_value = date.fromisoformat(value)
             except ValueError:
-                raise PydanticCustomError(
+                raise PydanticCustomError from ValueError(
                     "birthday_invalid_format",
                     "Неверная дата. Проверьте саму дату или ее формат: YYYY-MM-DD, например: 2000-01-31",
                 )
@@ -41,7 +41,7 @@ class UserAddSchema(OptionalColumns):
 
 class SignupResponse(OptionalColumns):
     id: int
-    email: EmailStr = None
+    email: Optional[EmailStr] = None
 
 
 class AuthenticateUser(BaseModel):

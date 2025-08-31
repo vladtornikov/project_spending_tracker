@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from asyncpg import ForeignKeyViolationError
+from asyncpg import ForeignKeyViolationError  # type: ignore[import-untyped]
 
 from internal.exceptions import (
     CategoryNotFound,
