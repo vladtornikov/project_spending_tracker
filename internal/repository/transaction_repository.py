@@ -1,4 +1,6 @@
-from sqlalchemy import select
+from datetime import timedelta
+
+from sqlalchemy import delete, func, select
 
 from internal.models_database.transactions import TransactionsModel
 from internal.repository.base_repository import BaseRepository
@@ -47,3 +49,19 @@ class TransactionRepository(BaseRepository):
 
         models = result.scalars().all()
         return [self.mapper.from_SQL_to_pydantic_model(model) for model in models]
+
+    async def delete_old_transaction(self, period: int) -> dict:
+        self.logger.info(
+            "Начал выполнение фоновой задачи по очистке транзакций, которые хрянятся более %s дней",
+            period,
+        )
+        statement = delete(self.model).where(
+            self.model.transaction_date < func.now() - timedelta(days=period)
+        )
+
+        res = await self.session.execute(statement)
+        rows_counted = res.rowcount
+        self.logger.info(
+            "Выполнил фоновую задачу, кол-вол удаленных записей - %s", rows_counted
+        )
+        return {"status": "ok", "rows_affected": rows_counted}

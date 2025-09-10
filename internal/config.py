@@ -28,6 +28,11 @@ class DatabaseConfig(BaseModel):
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS.get_secret_value()}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
 
+class CeleryBeatConfig(BaseModel):
+    schedule: int = 0
+    days_period: int = 733
+
+
 class AuthJwt(BaseModel):
     private_key_path: Path = config_dir / "certs" / "jwt-private.pem"
     public_key_path: Path = config_dir / "certs" / "jwt-public.pem"
@@ -47,12 +52,23 @@ class LoggerConfig(BaseModel):
     date_format: str
 
 
+class RabbitMqConfig(BaseModel):
+    rmq_host: str
+    rmq_port: int
+    rmq_user: str
+    rmq_password: str
+    rmq_exchange: str
+    rmq_routing_key: str
+    email_updates_exchange_name: str
+
+
 class Settings(BaseSettings):
     # Core settings
     environment: str = Field(default="development")
 
     # Database nested config from dote_env file
     database: DatabaseConfig
+    celery_beat: CeleryBeatConfig = Field(default_factory=CeleryBeatConfig)
     jwt: AuthJwt = Field(default_factory=AuthJwt)
     model_config = SettingsConfigDict(
         env_file=(env_path, ".env.production"), env_nested_delimiter="__"
@@ -61,6 +77,7 @@ class Settings(BaseSettings):
     # Applicaton nested config from development.yaml file
     server: ServerConfig
     logger: LoggerConfig
+    rabbit_mq: RabbitMqConfig
 
     @classmethod
     def settings_customise_sources(

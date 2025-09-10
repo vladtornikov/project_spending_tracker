@@ -87,8 +87,8 @@ async def update_category(
             user_id,
             category_id,
         )
-    except CategoryNotFound:
-        raise CategoryNotFound
+    except CategoryNotFound as e:
+        raise e
 
     logger.info("Successfully updated category, new columns %s", result.model_dump())
     return result

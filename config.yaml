@@ -7,3 +7,4 @@ logger:
   level: 'INFO'
   format: "[timestamp: %(asctime)s, service:%(filename)s:%(lineno)d, level:%(levelname)s, trace_id:%(process)d - %(message)s]"
   date_format: "%Y-%m-%d %H:%M:%S"
+
