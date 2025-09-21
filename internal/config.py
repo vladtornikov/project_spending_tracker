@@ -34,8 +34,7 @@ class CeleryBeatConfig(BaseModel):
 
 
 class AuthJwt(BaseModel):
-    private_key_path: Path = config_dir / "certs" / "jwt-private.pem"
-    public_key_path: Path = config_dir / "certs" / "jwt-public.pem"
+    secret_key: str
     algorithm: str = "RS256"
     access_token_expired_minutes: int = 15
 
@@ -53,13 +52,14 @@ class LoggerConfig(BaseModel):
 
 
 class RabbitMqConfig(BaseModel):
+    rmq_url: str
     rmq_host: str
     rmq_port: int
     rmq_user: str
     rmq_password: str
     rmq_exchange: str
-    rmq_routing_key: str
-    email_updates_exchange_name: str
+    rmq_routing_keys: list[str]
+    rmq_queue_name: str
 
 
 class Settings(BaseSettings):
@@ -67,12 +67,13 @@ class Settings(BaseSettings):
     environment: str = Field(default="development")
 
     # Database nested config from dote_env file
-    database: DatabaseConfig
-    celery_beat: CeleryBeatConfig = Field(default_factory=CeleryBeatConfig)
-    jwt: AuthJwt = Field(default_factory=AuthJwt)
     model_config = SettingsConfigDict(
         env_file=(env_path, ".env.production"), env_nested_delimiter="__"
     )
+
+    database: DatabaseConfig
+    celery_beat: CeleryBeatConfig = Field(default_factory=CeleryBeatConfig)
+    jwt: AuthJwt = Field(default_factory=AuthJwt)
 
     # Applicaton nested config from development.yaml file
     server: ServerConfig

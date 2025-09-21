@@ -38,7 +38,7 @@ class AuthService(BaseService):
     @staticmethod
     def encode_jwt(
         payload: dict,
-        private_key: str = settings.jwt.private_key_path.read_text(),
+        secret_key: str = settings.jwt.secret_key,
         algorithm: str = settings.jwt.algorithm,
         expire_minutes: int = settings.jwt.access_token_expired_minutes,
     ):
@@ -46,17 +46,17 @@ class AuthService(BaseService):
         now = datetime.now(timezone.utc)
         expire = now + timedelta(minutes=expire_minutes)
         to_encode.update({"exp": expire, "iat": now})
-        encoded_jwt = jwt.encode(to_encode, private_key, algorithm=algorithm)
+        encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=algorithm)
         return encoded_jwt
 
     def decode_token(
         self,
         access_token: str,
-        public_key: str = settings.jwt.public_key_path.read_text(),
+        secret_key: str = settings.jwt.secret_key,
         algorithm: str = settings.jwt.algorithm,
     ) -> dict:
         try:
-            return jwt.decode(access_token, public_key, algorithms=algorithm)
+            return jwt.decode(access_token, secret_key, algorithms=algorithm)
         except jwt.exceptions.ExpiredSignatureError as e:
             self.logger.exception("Просроченный токен доступа")
             raise TokenExpired from e

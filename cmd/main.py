@@ -15,6 +15,7 @@ sys.path.append(str(Path(__file__).parents[1]))
 from internal.config import settings
 from internal.controllers_API.auth_API import router as auth_router
 from internal.controllers_API.categories_API import router as category_router
+from internal.controllers_API.reports_API import router as report_router
 from internal.controllers_API.transactions_API import router as transaction_router
 from internal.exceptions import AppError
 from internal.logger import configure_logging, logger_dep
@@ -39,6 +40,7 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(auth_router)
 app.include_router(category_router)
 app.include_router(transaction_router)
+app.include_router(report_router)
 
 
 @app.middleware("http")

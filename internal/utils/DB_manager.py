@@ -1,8 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from internal.logger import configure_logging, get_logger
 from internal.repository.auth_repository import AuthRepository
 from internal.repository.category_repository import CategoryRepository
 from internal.repository.transaction_repository import TransactionRepository
+
+configure_logging()
+log = get_logger()
 
 
 class DB_Manager:
@@ -25,6 +29,7 @@ class DB_Manager:
                 await self.session.rollback()
         finally:
             await self.session.close()
+            log.info("Close database current session upon completion of task")
         return False
 
     async def commit(self):
