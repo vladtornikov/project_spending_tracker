@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from internal.constants import RabbitTasksConstant
 from internal.logger import configure_logging, get_logger
 from internal.utils.DB_manager import DbManager
 
@@ -13,12 +14,15 @@ class RabbitTasks:
 
     async def base_consume(self, parameters: dict):
         async with DbManager(session_factory=self.session_factory) as db:
-            if parameters.get("task") == "reports.generate.monthly_by_category":
+            if parameters.get("task") == RabbitTasksConstant.REPORTS_CATEGORY:
                 await db.transaction.get_transaction_report_by_period(**parameters)
 
-            elif parameters.get("task") == "beat.delete.old.transactions":
-                result = await db.transaction.delete_old_transaction(
+            elif parameters.get("task") == RabbitTasksConstant.BEAT_DELETE_TRANSACTION:
+                result: int = await db.transaction.delete_old_transaction(
                     period=parameters["period"]
                 )
                 await db.commit()
+                log.info(
+                    "Background_task_completed, deleted rows - %s", result
+                )
                 return result

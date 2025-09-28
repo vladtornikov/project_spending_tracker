@@ -52,7 +52,7 @@ class TransactionRepository(BaseRepository):
         models = result.scalars().all()
         return [self.mapper.from_SQL_to_pydantic_model(model) for model in models]
 
-    async def delete_old_transaction(self, period: int) -> dict:
+    async def delete_old_transaction(self, period: int) -> int:
         self.logger.info(
             "Start deleting transactions that last more than %s days",
             period,
@@ -66,7 +66,7 @@ class TransactionRepository(BaseRepository):
         self.logger.info(
             "Successfully deleted transaction(s), amount - %s", rows_counted
         )
-        return {"status": "ok", "rows_affected": rows_counted}
+        return rows_counted
 
     async def get_transaction_report_by_period(self, **filters):
         self.logger.info(

@@ -9,6 +9,8 @@ from pydantic_settings import (
     YamlConfigSettingsSource,
 )
 
+from internal.constants import Environment
+
 config_dir = Path(__file__).parents[1]
 env_path = config_dir / "config" / ".env"
 yaml_path = config_dir / "config"
@@ -64,7 +66,11 @@ class RabbitMqConfig(BaseModel):
 
 class Settings(BaseSettings):
     # Core settings
-    environment: str = Field(default="development")
+    environment: Environment = Environment.DEVELOPMENT
+
+    @property
+    def is_def(self) -> bool:
+        return self.environment is Environment.DEVELOPMENT
 
     # Database nested config from dote_env file
     model_config = SettingsConfigDict(

@@ -12,7 +12,7 @@ def configure_logging(level: Optional[str] = None) -> logging.Logger:
     if level is None:
         level = settings.logger.level
 
-    if settings.environment == "development":
+    if settings.is_def:
         formatter = logging.Formatter(
             fmt=settings.logger.format, datefmt=settings.logger.date_format
         )

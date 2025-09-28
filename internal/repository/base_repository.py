@@ -28,11 +28,6 @@ class BaseRepository:
     async def add_to_the_database(self, **data: dict) -> BaseModel:
         add_data_stmt = insert(self.model).values(**data).returning(self.model)
 
-        # self.logger.info(
-        # 	"SQL query: %s",
-        # 	add_data_stmt.compile(compile_kwargs={"literal_binds": True}),
-        # )
-
         try:
             result = await self.session.execute(add_data_stmt)
         except IntegrityError as ex:

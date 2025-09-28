@@ -30,7 +30,7 @@ class Consumer(RabbitBase):
             await RabbitTasks(self.async_session_maker).base_consume(
                 json.loads(message.body)
             )
-            log.info(" [x] Successfully worked with message, status - ok")
+            log.info(" [x] Successfully worked with message %r, status - ok", message.body)
 
     async def consume_message(self, prefetch_count: int = 1):
         """
@@ -79,4 +79,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(consume())
     except KeyboardInterrupt:
-        log.warning("Bye!")
+        log.warning("Close the RabbitMQ consumer")

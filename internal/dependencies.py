@@ -33,10 +33,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/signin/", auto_error=Fals
 
 
 def get_token(
-    # credentials: HTTPAuthorizationCredentials = Depends(http_bearer)
     token: str = Depends(oauth2_scheme),
 ) -> str:
-    # return credentials.credentials
     return token
 
 
