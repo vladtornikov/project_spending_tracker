@@ -9,7 +9,7 @@ configure_logging()
 log = get_logger()
 
 
-class DB_Manager:
+class DbManager:
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]):
         self.session_factory = session_factory
 

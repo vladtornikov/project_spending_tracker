@@ -10,7 +10,7 @@ from fastapi.security import (
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from internal.utils.DB_manager import DB_Manager
+from internal.utils.DB_manager import DbManager
 
 from .database import async_session_maker
 from .exceptions import (
@@ -21,11 +21,11 @@ from .services.auth_service import AuthService
 
 
 async def get_db() -> AsyncGenerator[AsyncSession | None]:
-    async with DB_Manager(session_factory=async_session_maker) as db:
+    async with DbManager(session_factory=async_session_maker) as db:
         yield db
 
 
-DB_Dep = Annotated[DB_Manager, Depends(get_db)]
+DB_Dep = Annotated[DbManager, Depends(get_db)]
 
 
 http_bearer = HTTPBearer()
@@ -42,7 +42,7 @@ def get_token(
 
 def get_current_user_id(access_token=Depends(get_token)) -> int:
     try:
-        decoded_token: dict = AuthService(DB_Manager).decode_token(access_token)
+        decoded_token: dict = AuthService(DbManager).decode_token(access_token)
 
     except TokenExpired as e:
         raise e

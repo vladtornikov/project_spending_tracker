@@ -5,13 +5,13 @@ from uuid import UUID
 from internal.exceptions import CategoryNotFound
 from internal.logger import get_logger
 from internal.schemas.categories import ResponseCategorySchema
-from internal.utils.DB_manager import DB_Manager
+from internal.utils.DB_manager import DbManager
 
 
 class BaseService:
     logger: logging.Logger = get_logger()
 
-    def __init__(self, db: DB_Manager):
+    def __init__(self, db: DbManager):
         self.db = db
 
     async def check_category_user_id(self, user_id: int, category_id: UUID):
