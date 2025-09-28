@@ -13,7 +13,10 @@ select = [
     # isort
     "I",
 ]
+exclude = ["migrations/*.py"]
+ignore=['E501']
 
 [format]
 quote-style = "double"
-indent-style = "tab"
+indent-style = "space"
+exclude = ["migrations/*.py", 'Makefile']

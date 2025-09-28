@@ -1,5 +1,7 @@
 config/
- .venv/
-__pycache__/
+.venv/
 **/__pycache__/
 .idea/
+**/demo_auth.py
+/certs
+README_auth_JWT_keys
