@@ -1,5 +1,4 @@
-__all__ = ("RabbitBase", "RabbitException", "common")
+__all__ = ("RabbitBase", "RabbitException")
 
 
-from internal.rabbit import common
 from internal.rabbit.rabbit_base import RabbitBase, RabbitException
