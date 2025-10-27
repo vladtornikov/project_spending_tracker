@@ -17,9 +17,7 @@ class Producer(RabbitBase):
     def json_encode(obj):
         if isinstance(obj, (datetime, date)):
             return obj.isoformat()
-        if isinstance(obj, UUID):
-            return str(obj)
-        if isinstance(obj, Decimal):
+        if isinstance(obj, (UUID, Decimal, int)):
             return str(obj)
         raise TypeError(f"Type not serializable: {type(obj)}")
 

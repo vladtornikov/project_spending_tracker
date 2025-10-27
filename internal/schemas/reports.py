@@ -2,13 +2,13 @@ from datetime import date
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
-class OneCategoryReport(BaseModel):
-    category_id: UUID
-    start_date: Optional[date] = Field(default=None)
-    end_date: Optional[date] = Field(default=None)
+class SchemaReport(BaseModel):
+    user_id: Optional[int] = Field(default=None)
+    start_date: date
+    end_date: date
 
     @field_validator("start_date", mode="after")
     @classmethod
@@ -23,3 +23,13 @@ class OneCategoryReport(BaseModel):
         if end_date > date.today():
             raise ValueError("Введенная дата не может быть в будущем")
         return end_date
+
+    @model_validator(mode="after")
+    def check_range(self):
+        if self.start_date > self.end_date:
+            raise ValueError("start_date не может быть больше end_date")
+        return self
+
+
+class OneCategoryReport(SchemaReport):
+    category_id: UUID

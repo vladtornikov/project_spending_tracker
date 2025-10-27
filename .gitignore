@@ -5,3 +5,4 @@ config/
 **/demo_auth.py
 /certs
 README_auth_JWT_keys
+reports/

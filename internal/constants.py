@@ -6,6 +6,8 @@ class Environment(StrEnum):
     STAGING = "staging"
     PRODUCTION = "production"
 
+
 class RabbitTasksConstant(StrEnum):
     REPORTS_CATEGORY = "reports.generate.monthly_by_category"
-    BEAT_DELETE_TRANSACTION = 'beat.delete.old.transactions'
+    BEAT_DELETE_TRANSACTION = "beat.delete.old.transactions"
+    REPORTS_ALL_CATEGORIES = "reports.generate.by_categories"

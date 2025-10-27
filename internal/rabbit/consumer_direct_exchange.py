@@ -24,20 +24,17 @@ class Consumer(RabbitBase):
 
     async def process_new_message(self, message: AbstractIncomingMessage):
         async with message.process():
-            log.info(
-                "Receive message %r, routing key %r", message.body, message.routing_key
-            )
-            await RabbitTasks(self.async_session_maker).base_consume(
-                json.loads(message.body)
-            )
-            log.info(" [x] Successfully worked with message %r, status - ok", message.body)
+            rk = message.routing_key
+            log.info("Receive message %r, routing key %r", message.body, rk)
+            payload = json.loads(message.body)
+            await RabbitTasks(self.async_session_maker).base_consume(rk, payload)
 
     async def consume_message(self, prefetch_count: int = 1):
         """
         Слушаем ИМЕННУЮ durable-очередь и биндимся ко всем routing_key из конфига.
         Очередь должна существовать до публикаций (на старте воркера).
         Это чтобы, если воркер у нас упал, сообщение не потерялось.
-        То есть мы связываем exchange всегда с определенной очередью. Поэтому сообщения не теряеются
+        То есть мы связываем exchange всегда с определенной очередью. Поэтому сообщения не теряются
         """
         queue_name = settings.rabbit_mq.rmq_queue_name
         await self.channel.set_qos(prefetch_count=prefetch_count)

@@ -9,8 +9,8 @@ configure_logging()
 log = get_logger()
 
 
-async def delete_transactions(period: int, routing_key: str, task: str):
-    await publish_message(routing_key, task=task, period=period)
+async def delete_transactions(period: int, routing_key: str):
+    await publish_message(routing_key, period=period)
 
 
 async def main():
@@ -22,7 +22,6 @@ async def main():
         kwargs={
             "period": 365,
             "routing_key": "beat",
-            "task": "beat.delete.old.transactions",
         },
         max_instances=1,  # не запускать конкурентно одну и ту же джобу
     )
